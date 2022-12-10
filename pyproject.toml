@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "aio-spotify"
+version = "0.1.0a"
+description = ""
+authors = ["Void-ux"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = "^1.10.2"
+yarl = "^1.8.2"
+aiohttp = "^3.8.3"
+
+[tool.poetry.dev-dependencies]
+furo = "^2022.12.7"
+sphinxcontrib-trio = "^1.1.2"
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode="strict"
+reportUnusedImport = "warning"
+reportUnnecessaryTypeIgnoreComment = "warning"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
