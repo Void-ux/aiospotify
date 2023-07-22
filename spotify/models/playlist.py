@@ -1,12 +1,31 @@
+from __future__ import annotations
+
 import datetime
-from typing import TypedDict, Optional, Dict, List, Any
+from typing import TYPE_CHECKING, TypedDict, Optional, Dict, List, Any
+
+from yarl import URL
 
 from .archetypes import SpotifyObject, SpotifyBasePayload, FollowerData
 from .image import Image, ImagePayload
 from .track import Track, TrackPayload
 from .user import PartialUser, PartialUserPayload
+from ..utils import Route
+
+if TYPE_CHECKING:
+    from ..http import HTTPClient
+
 
 __all__ = ('Playlist', 'PlaylistTracks', 'PlaylistItem')
+
+
+class NextTracksPayload(TypedDict):
+    href: str
+    items: List[PlaylistItemPayload]
+    limit: int
+    next: Optional[str]
+    previous: Optional[str]
+    offset: int
+    total: int
 
 
 class PlaylistItemPayload(TypedDict):
@@ -88,7 +107,13 @@ class PlaylistTracks:
         self._next: Optional[str] = data['next']
         self.offset: int = data['offset']
         self._previous: Optional[str] = data['previous']
-        self.total: int
+        self.total: int = data['total']
+
+    def __contains__(self, item: Any) -> bool:
+        if not isinstance(item, Track):
+            return False
+
+        return any(item.id == i.track.id for i in self.items)
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {' '.join(f'{attr}={value}' for attr, value in self.__dict__.items())}>"
@@ -132,7 +157,7 @@ class Playlist(SpotifyObject):
         The playlist's tracks.
     """
 
-    def __init__(self, data: PlaylistPayload):
+    def __init__(self, data: PlaylistPayload, http: HTTPClient):
         super().__init__(data)
 
         # formatting the images
@@ -147,3 +172,24 @@ class Playlist(SpotifyObject):
         self.public: bool = data['public']
         self.snapshot_id: str = data['snapshot_id']
         self.tracks: PlaylistTracks = PlaylistTracks(data['tracks'])
+        self._http: HTTPClient = http
+
+    async def fetch_tracks(self) -> None:
+        """|coro|
+        A method to populate the playlist's tracks if it contains over 100 tracks.
+        """
+        next_ = self.tracks._next # type: ignore
+
+        while next_ is not None:
+            # not really ideal and defeats the purpose of Route
+            # however i'm too lazy to make this "proper"
+            route = Route('GET', '')
+            route.url = URL(next_)
+
+            res: NextTracksPayload = await self._http.request(route)
+            self.tracks.items += [PlaylistItem(i) for i in res['items']]
+
+            if self.tracks.offset + self.tracks.limit >= self.tracks.total:
+                return
+
+            next_ = res['next']

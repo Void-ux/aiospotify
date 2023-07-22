@@ -4,17 +4,19 @@ import asyncio
 import logging
 import json
 import base64
-from typing import TYPE_CHECKING, TypeVar, Optional, Coroutine, Union, Any, Dict
+from typing import TYPE_CHECKING, TypeVar, Optional, Coroutine, Union, Any, Dict, List
 
 import aiohttp
 
 # from . import __version__
 __version__ = '0.1.0a'
 from .utils import Route
+from .models.archetypes import Partial
 from .models.artist import ArtistPayload
 from .models.playback import ActivityPayload
-from .models.track import TrackPayload
-from .models.playlist import PlaylistPayload
+from .models.track import TrackPayload, Track
+from .models.playlist import PlaylistPayload, Playlist
+from .models.user import UserPayload, User, PartialUser
 from .errors import (
     Unauthorized,
     Forbidden,
@@ -134,9 +136,6 @@ class HTTPClient:
         for tries in range(5):
             async with self._session.request(route.method, route.url, **kwargs) as response:
                 data = await json_or_text(response)
-                # print(dict(response.headers))
-                # print(response)
-                # print(response.content)
 
                 if 300 > response.status >= 200:
                     return data
@@ -187,3 +186,35 @@ class HTTPClient:
 
     def get_track(self, track_id: str) -> Response[TrackPayload]:
         return self.request(Route('GET', '/tracks/{id}', id=track_id))
+
+    def get_current_user(self) -> Response[UserPayload]:
+        return self.request(Route('GET', '/me'))
+
+    def create_playlist(
+        self,
+        user: User | PartialUser | Partial,
+        name: str,
+        description: str,
+        public: bool
+    ) -> Response[PlaylistPayload]:
+        data = {
+            'name': name,
+            'description': description,
+            'public': public
+        }
+        return self.request(Route('POST', '/users/{id}/playlists', id=user.id), json=data)
+
+    def add_tracks(
+        self,
+        playlist: Union[Playlist, Partial],
+        tracks: List[Track],
+        *,
+        position: Optional[int] = None
+    ) -> Response[Any]:
+        data: Dict[str, Any] = {
+            'uris': [i.uri for i in tracks]
+        }
+        if position is not None:
+            data['position'] = position
+
+        return self.request(Route('POST', '/playlists/{id}/tracks', id=playlist.id), json=data)

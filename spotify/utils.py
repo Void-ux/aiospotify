@@ -1,7 +1,15 @@
-from typing import Literal, Any
+from __future__ import annotations
+
+import itertools
+from typing import TYPE_CHECKING, Generator, Literal, Sequence, Tuple, Any
 from urllib.parse import quote as _uriquote
 
 from yarl import URL
+
+if TYPE_CHECKING:
+    from typing import TypeVar
+
+    T = TypeVar('T')
 
 
 # Credits to AbstractUmbra at https://github.com/AbstractUmbra/Hondana/blob/main/hondana/utils.py#L136-L160
@@ -11,7 +19,7 @@ class Route:
 
     Parameters
     -----------
-    verb: :class:`str`
+    method: :class:`str`
         The HTTP method you wish to perform, e.g. ``"POST"``
     path: :class:`str`
         The prepended path to the API endpoint you with to target. e.g. ``"/me/player/currently-playing"``
@@ -32,7 +40,11 @@ class Route:
 
         self.url: URL = URL(url, encoded=True)
 
-    @property
-    def key(self) -> str:
-        """The bucket key is used to represent the route in various mappings."""
-        return f'{self.method} {self.path}'
+
+def grouper(n: int, iterable: Sequence[T]) -> Generator[Tuple[T, ...], Any, None]:
+    it = iter(iterable)
+    while True:
+        chunk = tuple(itertools.islice(it, n))
+        if not chunk:
+            return
+        yield chunk

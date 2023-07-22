@@ -1,14 +1,16 @@
-from typing import Optional, Any
+from typing import List, Optional, Any, Union
 from typing_extensions import Self
 
 import aiohttp
 
+from .models.archetypes import Partial
 from .models.playback import Activity
 from .models.track import Track
 from .models.artist import Artist
 from .models.playlist import Playlist
-
+from .models.user import PartialUser, User
 from .http import HTTPClient
+from .utils import grouper
 
 __all__ = ('Client', )
 
@@ -48,7 +50,7 @@ class Client():
         self.http = HTTPClient(access_token, session, refresh_token, client_id, client_secret)
 
     async def close(self):
-        if self.http is not None:
+        if self.http._session is not None:  # type: ignore
             await self.http._close()  # type: ignore
 
     async def __aenter__(self) -> Self:
@@ -112,12 +114,11 @@ class Client():
             The playlist you requested.
         """
         data = await self.http.get_playlist(playlist_id)
-        print(data)
-        return Playlist(data)
+        return Playlist(data, self.http)
 
     # Player
 
-    async def fetch_currently_playing(self) -> Activity | None:
+    async def fetch_currently_playing(self) -> Optional[Activity]:
         """|coro|
         Fetches the currently playing item on a user's account.
 
@@ -131,3 +132,46 @@ class Client():
         """
         data = await self.http.get_currently_playing()
         return Activity(data)
+
+    async def get_current_user(self) -> User:
+        """|coro|
+        Fetches the current user's information.
+
+        Returns
+        -------
+        :class:`User`
+            The user.
+        """
+        data = await self.http.get_current_user()
+        return User(data)
+
+    async def create_playlist(
+        self,
+        user: Union[User, PartialUser, Partial],
+        name: str,
+        description: str,
+        public: bool = False
+    ) -> Playlist:
+        """|coro|
+        Creates a playlist for a user.
+
+        Returns
+        -------
+        :class:`Playlist`
+            The newly created playlist.
+        """
+        data = await self.http.create_playlist(user, name, description, public)
+        return Playlist(data, self.http)
+
+    async def add_tracks(
+        self,
+        playlist: Union[Playlist, Partial],
+        tracks: List[Track],
+        *,
+        position: Optional[int] = None
+    ) -> None:
+        """|coro|
+        Adds item(s) to an existing playlist
+        """
+        for i in grouper(100, tracks):
+            await self.http.add_tracks(playlist, i, position=position)

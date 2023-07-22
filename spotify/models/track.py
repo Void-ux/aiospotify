@@ -90,11 +90,11 @@ class Track(SpotifyObject):
     available_markets: List[str]
     disc_number: int
     duration_ms: int
-    explicit: bool | None
+    explicit: Optional[bool]
     external_ids: TrackExternalIDs
     external_urls: Dict[str, str]
-    is_playable: bool | None
-    linked_from: Dict[Any, Any] | None
+    is_playable: Optional[bool]
+    linked_from: Optional[Dict[Any, Any]]
     restrictions: Optional[Dict[Literal['reason'], str]]
     popularity: int
     preview_url: Optional[str]
@@ -115,11 +115,11 @@ class Track(SpotifyObject):
         self.available_markets: list[str] = data['available_markets']
         self.disc_number: int = data['disc_number']
         self.duration: datetime.timedelta = datetime.timedelta(seconds=data['duration_ms'] / 1000)
-        self.explicit: bool | None = data['explicit']
+        self.explicit: Optional[bool] = data['explicit']
         self.external_ids: TrackExternalIDs = data['external_ids']
         self.external_urls: dict[str, str] = data['external_urls']
-        self.is_playable: bool | None = data.get('is_playable')
-        self.linked_from: Dict[Any, Any] | None = data.get('linked_from')
+        self.is_playable: Optional[bool] = data.get('is_playable')
+        self.linked_from: Optional[Dict[Any, Any]] = data.get('linked_from')
         self.restrictions: Optional[Dict[Literal['reason'], str]] = data.get('restrictions')
         self.popularity: int = data['popularity']
         self.preview_url: Optional[str] = data['preview_url']
