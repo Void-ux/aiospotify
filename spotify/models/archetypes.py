@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, Any
 
 
 class SpotifyBasePayload(TypedDict):
@@ -38,6 +38,12 @@ class SpotifyObject:
         self.type: str = data["type"]
         self.uri: str = data["uri"]
 
+    def __eq__(self, other: Any) -> bool:
+        if self.type == getattr(other, 'type', None):
+            if self.id == other.id:
+                return True
+        return False
+
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {' '.join(f'{attr}={value}' for attr, value in self.__dict__.items())}>"
 
@@ -54,3 +60,8 @@ class FollowerData(TypedDict):
     """
     href: None  # will be str when the API supports it
     total: int
+
+
+class Partial:
+    def __init__(self, *, id: str):
+        self.id = id
