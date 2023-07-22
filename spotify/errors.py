@@ -17,7 +17,7 @@ class SpotifyException(Exception):
 
 
 class HTTPException(SpotifyException):
-    """Exception that's raised when an HTTP request operation fails.
+    """Exception that's raised when a HTTP request operation fails.
 
     Attributes
     ------------
@@ -47,8 +47,7 @@ class HTTPException(SpotifyException):
 
 
 class RateLimited(SpotifyException):
-    """Exception that's raised for when status code 429 occurs, and the
-    ``retry_after`` exceeds the ``max_ratelimit_timeout``.
+    """Exception that's raised for when status code 429 occurs.
 
     Attributes
     ------------
